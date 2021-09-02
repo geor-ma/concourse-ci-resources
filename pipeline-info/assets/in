@@ -1,0 +1,39 @@
+#!/bin/bash
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+set -e
+#set -x
+
+#
+# Destination for pipeline info file. Concourse passes the folder name to in script. 
+# Files put in $1 (destination folder) is available to pipeline steps with get resource.
+# 
+destination=$1
+
+if [ -z "$destination" ]; then
+  echo "usage: $0 <path/to/destination>" >&2
+  exit 1
+fi
+
+cd $destination
+
+pipeline_info=pipeline-info
+
+# Following information about pipeline is available as environment variables in a concourse resource (not in tasks)
+jsonInfo="{
+	\"BUILD_ID\": \"${BUILD_ID}\",
+	\"BUILD_NAME\": \"${BUILD_NAME}\",
+	\"BUILD_JOB_NAME\": \"${BUILD_JOB_NAME}\",
+	\"BUILD_PIPELINE_NAME\": \"${BUILD_PIPELINE_NAME}\",
+	\"BUILD_TEAM_NAME\": \"${BUILD_TEAM_NAME}\",
+	\"ATC_EXTERNAL_URL\": \"${ATC_EXTERNAL_URL}\"
+}"
+
+echo $jsonInfo > "${pipeline_info}"
+
+jq . $pipeline_info
+
+jq -n "{version:{timestamp:\"$(date +%s)\"}}" >&3
+

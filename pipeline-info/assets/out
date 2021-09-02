@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+#set -x
+
+jq -n "{version:{timestamp:\"$(date +%s)\"}}" >&1
+
